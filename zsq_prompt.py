@@ -12,7 +12,6 @@ from PIL import Image, ImageOps, ImageSequence
 import hashlib
 import inspect
 from server import PromptServer
-import folder_paths
 from aiohttp import web
 
 def read_json_file(file_path):
@@ -114,77 +113,98 @@ def populate_items(styles, item_type):
                     "preview": None
                 }
 
-def get_prompt(key,required,options,config):        
-        list_value_dict = required.get(key, "")
-        if isinstance(list_value_dict, dict):
-            list_value = list_value_dict["content"].split("/")[-1]     
-           
-        else: 
-            list_value = list_value_dict
-        res = ""
-        prompt_tmp = ""
-        if list_value != "nothing": 
-            prompt_tmp = select_value_by_name(options,key,list_value)                
-            value = config.get(key)                
-            if value is not None:
-                value_float = float(value)
-                #value取值[0,2]
-                if value_float > 2:value="2"
-                if value_float < 0:value="0"
-                res = f"({prompt_tmp}):{value}"                    
-            else:
-                res =  prompt_tmp               
-        return res
+def get_prompt_from_key(key,required):
+    list_value_dict = required.get(key, "")
+    if isinstance(list_value_dict, dict):
+        list_value = list_value_dict["content"].split("/")[-1]  
+    else: 
+        list_value = list_value_dict
+    return list_value
+
+def set_prompt_weight_from_key(key,prompt_tmp,config):                   
+    value = config.get(key)                
+    if value is not None:
+        value_float = float(value)
+        #value取值[0,2]
+        if value_float > 2:value="2"
+        if value_float < 0:value="0"
+        res = f"({prompt_tmp}):{value}"                    
+    else:
+        res =  prompt_tmp
+    return res
+def get_prompt(key,required,options,config):  
+    res = ""      
+    list_value = get_prompt_from_key(key,required)
+    prompt_tmp = ""        
+    if list_value != "nothing":            
+        prompt_tmp = select_value_by_name(options,key,list_value) 
+        res = set_prompt_weight_from_key(key,prompt_tmp,config)                
+    return res
+
 def get_prompt_rd(key,options,config):
-        res = ""
-        list_dict = options[key][0]                             
-        index = rd.randint(0, len(list_dict.items())-1)
-        prompt_tmp = list(list_dict.values())[index]                
-                    
-        if prompt_tmp != "nothing":
-        #prompt_tmp = select_value_by_name(options,key,list_value)                
-            value = config.get(key)                
-            if value is not None:
-                value_float = float(value)
-                #value取值[0,2]
-                if value_float > 2:value="2"
-                if value_float < 0:value="0"
-                res = f"({prompt_tmp}):{value}"                    
+    res = ""
+    prompt_tmp = ""
+    list_dict = options[key][0]                             
+    index = rd.randint(0, len(list_dict.items())-1)
+    prompt_tmp = list(list_dict.values())[index] 
+    if prompt_tmp != "nothing":              
+        res = set_prompt_weight_from_key(key,prompt_tmp,config)               
+    return res
+
+def get_propmt_style(self,required,Random,Random_Flag):
+    gender = required['GO_gender']
+    age = required['GO_age']
+    Random_Item = required['GO_Random_Item']  
+    list_keys = []
+    for key in required.keys():            
+        if not "GO_" in key:
+            list_keys.append(key)
+    config = self.config
+    options = self.json_data
+    res1 = ""
+    if gender!= "-":
+            res1= res1 + f",{gender},({str(age)}-year-old):1.5"
+    if not Random_Flag:
+        for key in list_keys:
+            tmp = get_prompt(key,required,options,config)
+            if tmp != "":
+                res1 = res1 + "," + tmp
+    elif Random == "ALL":
+        for key in list_keys:
+            res1 = res1 + "," + get_prompt_rd(key,options,config)                
+    elif Random == "ONLY":
+        for key in list_keys:
+            if Random_Item == key:
+                res1 = res1 + "," + get_prompt_rd(key,options,config)
             else:
-                res =  prompt_tmp               
-
-        return res
-
-def get_propmt_style(self,required,Random_Flag):
-        gender = required['in_gender']
-        age = required['in_age']
-        Random_names = required['in_Random_names']  
-        list_keys = []
-        for key in required.keys():            
-            if not "in_" in key:
-                list_keys.append(key)
-        config = self.config
-        options = self.json_data
-        res1 = ""
-        if gender!= "-":
-                res1= res1 + f",{gender},({str(age)}-year-old):1.5"
-        if not Random_Flag:
-            for key in list_keys:
                 tmp = get_prompt(key,required,options,config)
                 if tmp != "":
                     res1 = res1 + "," + tmp
-        elif Random_names == "ALL":
-            for key in list_keys:
-                res1 = res1 + "," + get_prompt_rd(key,options,config)                
-        else:
-            for key in list_keys:
-                if Random_names == key:
-                    res1 = res1 + "," + get_prompt_rd(key,options,config)
-                else:
-                    tmp = get_prompt(key,required,options,config)
-                    if tmp != "":
-                        res1 = res1 + "," + tmp
-        return res1    
+    elif Random == "EXCEPT":
+        for key in list_keys:
+            if Random_Item != key:
+                res1 = res1 + "," + get_prompt_rd(key,options,config)
+            else:
+                tmp = get_prompt(key,required,options,config)
+                if tmp != "":
+                    res1 = res1 + "," + tmp
+    elif Random == "NOSELECT":
+        for key in list_keys:
+            value_tmp = get_prompt_from_key(key,required)
+            if value_tmp == "nothing":
+                res1 = res1 + "," + get_prompt_rd(key,options,config)
+            else:
+                tmp = get_prompt(key,required,options,config)
+                if tmp != "":
+                    res1 = res1 + "," + tmp
+    elif Random == "SELECTED":
+        for key in list_keys:
+            value_tmp = get_prompt_from_key(key,required)
+            if value_tmp != "nothing":
+                res1 = res1 + "," + get_prompt_rd(key,options,config)            
+    else:
+        pass
+    return res1    
 
 class PromptStyler:
     def __init__(self):
@@ -197,7 +217,6 @@ class PromptStyler:
 
         styles,style_names=load_styles_from_directory(PROMPT_STYLES_DIR)
         self.json_data = styles
-        style_names.insert(0, 'ALL')
 
         widgets = {}
         for key in styles:
@@ -207,19 +226,18 @@ class PromptStyler:
 
         types = {
             "required":{
-                        "in_positive": ("STRING", {"default": "", "multiline": True}),
-                        "in_negative": ("STRING", {"default": "", "multiline": True}),
-                        #"Random": (["-", "Auto"], {"default": "-"}), 
-                        "in_Random": ("INT", {"default": 0, "step": 1, "min": 0, "max": 50, "display": "slider"}),                   
-                        "in_Random_names":((style_names),{"default": "ALL"} ),
-                        "in_gender": (["-", "Man", "Woman"], {"default": "-"}),
-                        "in_age": ("INT", {"default": 30, "step": 1, "min": 18, "max": 80, "display": "slider"}),
+                        "GO_positive": ("STRING", {"default": "", "multiline": True}),
+                        "GO_negative": ("STRING", {"default": "", "multiline": True}),
+                        "GO_Random": (["NO", "ONLY", "EXCEPT", "NOSELECT","SELECTED", "ALL"], {"default": "NO"}), 
+                        "GO_ImageNum": ("INT", {"default": 1, "step": 1, "min": 1, "max": 50, "display": "slider"}),                   
+                        "GO_Random_Item":((style_names),),
+                        "GO_gender": (["-", "Man", "Woman"], {"default": "-"}),
+                        "GO_age": ("INT", {"default": 30, "step": 1, "min": 0, "max": 80, "display": "slider"}),
                         **widgets,},
             }
         for key in style_names:
-            if key != "ALL":
-                style = types["required"][key][0]
-                populate_items(style, "images")
+            style = types["required"][key][0]
+            populate_items(style, "images")
  
         return types
     
@@ -230,18 +248,19 @@ class PromptStyler:
     CATEGORY = "ZSQ"
     
     def prompt_styler(self,**required):
-        Random = required["in_Random"]
-        positive = required['in_positive']
-        negative = required["in_negative"]
+        Random = required["GO_Random"]
+        ImageNum = required["GO_ImageNum"]        
+        positive = required['GO_positive']
+        negative = required["GO_negative"]
     
         prompts = []
-        if Random > 0: 
-            for i in range(Random):
-                res1 = get_propmt_style(self,required,True)
+        if Random != "NO": 
+            for i in range(ImageNum):
+                res1 = get_propmt_style(self,required,Random,True)
                 res1 = positive + "," + res1
                 prompts.append(res1)                
         else:    
-            res1 = get_propmt_style(self,required,False)
+            res1 = get_propmt_style(self,required,Random,False)
             res1 = positive + "," + res1
             prompts.append(res1)
                 
