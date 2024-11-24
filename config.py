@@ -1,10 +1,10 @@
 import os
 
 SCRIPT_DIR= os.path.dirname(os.path.abspath(__file__))
-RESOURCES_DIR = os.path.join(SCRIPT_DIR, "style_b")
-FOOOCUS_STYLES_DIR = os.path.join(SCRIPT_DIR, "style_b")
-PROMPT_STYLES_DIR = os.path.join(SCRIPT_DIR, "style_a")
-PROMPT_TEST_DIR = os.path.join(SCRIPT_DIR, "style_n")
+RESOURCES_DIR = os.path.join(SCRIPT_DIR, "style")
+FOOOCUS_STYLES_DIR = os.path.join(SCRIPT_DIR, "style")
+PROMPT_STYLES_DIR = os.path.join(SCRIPT_DIR, "style")
+PROMPT_TEST_DIR = os.path.join(SCRIPT_DIR, "style")
 
 BASE_RESOLUTIONS = [
     ("width", "height"),
