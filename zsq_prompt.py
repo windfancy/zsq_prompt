@@ -213,7 +213,7 @@ class PromptStyler:
                         "in_Random": ("INT", {"default": 0, "step": 1, "min": 0, "max": 50, "display": "slider"}),                   
                         "in_Random_names":((style_names),{"default": "ALL"} ),
                         "in_gender": (["-", "Man", "Woman"], {"default": "-"}),
-                        "in_age": ("INT", {"default": 30, "step": 1, "min": 0, "max": 80, "display": "slider"}),
+                        "in_age": ("INT", {"default": 30, "step": 1, "min": 18, "max": 80, "display": "slider"}),
                         **widgets,},
             }
         for key in style_names:
