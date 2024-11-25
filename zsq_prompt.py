@@ -232,7 +232,7 @@ class PromptStyler:
                         "GO_ImageNum": ("INT", {"default": 1, "step": 1, "min": 1, "max": 50, "display": "slider"}),                   
                         "GO_Random_Item":((style_names),),
                         "GO_gender": (["-", "Man", "Woman"], {"default": "-"}),
-                        "GO_age": ("INT", {"default": 30, "step": 1, "min": 0, "max": 80, "display": "slider"}),
+                        "GO_age": ("INT", {"default": 30, "step": 1, "min": 18, "max": 80, "display": "slider"}),
                         **widgets,},
             }
         for key in style_names:
