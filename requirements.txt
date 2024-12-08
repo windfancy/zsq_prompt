@@ -1,0 +1,5 @@
+transformers>=4.46.3
+numpy
+pillow
+timm
+

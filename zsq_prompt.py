@@ -1,18 +1,9 @@
 import torch
 import json
-import shutil
 import os
-import yaml
 import random as rd
 import comfy.model_management
-from .config import BASE_RESOLUTIONS,SCRIPT_DIR,RESOURCES_DIR,FOOOCUS_STYLES_DIR,PROMPT_STYLES_DIR,PROMPT_TEST_DIR
-
-import numpy as np
-from PIL import Image, ImageOps, ImageSequence
-import hashlib
-import inspect
-from server import PromptServer
-from aiohttp import web
+from .config import SCRIPT_DIR,PROMPT_STYLES_DIR,FOOOCUS_STYLES_DIR,RESOURCES_DIR
 
 def read_json_file(file_path):
     with open(file_path,'r',encoding='utf-8') as f:
@@ -81,37 +72,15 @@ def select_name_by_value(json_data,key,tmp_value):
                         res = dict_key
     return res
 
-@PromptServer.instance.routes.get("/preview/{name}")
-async def view(request):
-    name = request.match_info["name"]
-
-    image_path = name
-    filename = os.path.basename(image_path)
-    return web.FileResponse(image_path, headers={"Content-Disposition": f"filename=\"{filename}\""})
-def populate_items(styles, item_type):
+def populate_items(styles):
     for idx, item_name in enumerate(styles):
         if item_name!="-":
-            current_directory = os.path.dirname(os.path.abspath(__file__))            
-
             if len(item_name.split('-')) > 1:
-                preview_item = item_name.split('-')[-1]
                 content = f"{item_name.split('-')[0]} /{item_name}"
-                preview_path = os.path.join(current_directory, item_type, preview_item + ".png")
             else:
                 content = item_name
-                preview_path = ""
 
-            if os.path.exists(preview_path):
-                styles[idx] = {
-                    "content": content,
-                    "preview": preview_path
-                }
-            else:
-                #print(f"Warning: Preview image '{preview_item}.png' not found for item '{preview_item}'")
-                styles[idx] = {
-                    "content": content,
-                    "preview": None
-                }
+            styles[idx] = {"content": content}
 
 def get_prompt_from_key(key,required):
     list_value_dict = required.get(key, "")
@@ -206,7 +175,7 @@ def get_propmt_style(self,required,Random,Random_Flag):
         pass
     return res1    
 
-class PromptStyler:
+class PortraitStyler:
     def __init__(self):
         pass
     @classmethod
@@ -237,17 +206,17 @@ class PromptStyler:
             }
         for key in style_names:
             style = types["required"][key][0]
-            populate_items(style, "images")
+            populate_items(style)
  
         return types
     
-    RETURN_TYPES = ("LIST","STRING","STRING",)
-    RETURN_NAMES = ("positive_list","positive","negative",)
-    OUTPUT_IS_LIST = (True,True,False)
-    FUNCTION = "prompt_styler"
-    CATEGORY = "ZSQ"
+    RETURN_TYPES = ("STRING","STRING",)
+    RETURN_NAMES = ("positive","negative",)
+    OUTPUT_IS_LIST = (True,False)
+    FUNCTION = "run"
+    CATEGORY = "ZSQ/Prompt"
     
-    def prompt_styler(self,**required):
+    def run(self,**required):
         Random = required["GO_Random"]
         ImageNum = required["GO_ImageNum"]        
         positive = required['GO_positive']
@@ -264,130 +233,10 @@ class PromptStyler:
             res1 = positive + "," + res1
             prompts.append(res1)
                 
-        return(prompts,prompts,negative)
+        return(prompts,negative)
+
+
 
     
-resolution_strings = [f"{width} x {height} (custom)" if width == 'width' and height == 'height' else f"{width} x {height}" for width, height in BASE_RESOLUTIONS]
-class PromptLatent:
-    def __init__(self):
-        self.device = comfy.model_management.intermediate_device()
 
-    @classmethod
-    def INPUT_TYPES(self):
-        return {"required": 
-                {
-                    "resolution": (resolution_strings,{"default": "1024 x 1024"}),       
-                    "batch_size": ("INT", {"default": 1, "min": 1, "max": 4096, "tooltip": "The number of latent images in the batch."}) 
-                 },
-            }
-        
-    RETURN_TYPES = ("LATENT",)
-    RETURN_NAMES = ("latent",)
-    FUNCTION = "run"
-    CATEGORY = "ZSQ"
 
-    def run(self, resolution, batch_size):
-        width, height = resolution.split(" x ")
-        latent = torch.zeros([batch_size, 4, int(height) // 8, int(width) // 8], device=self.device)
-        return ({"samples":latent}, )
-
-class PromptCLIPEncode:
-    @classmethod
-    def INPUT_TYPES(s):
-        return {
-            "required": {
-                "positive": ("STRING", {"multiline": True, "dynamicPrompts": True, "tooltip": "The text to be encoded."}),
-                "negative": ("STRING", {"multiline": True, "dynamicPrompts": True, "tooltip": "The text to be encoded."}),  
-                "clip": ("CLIP", {"tooltip": "The CLIP model used for encoding the text."})
-            }
-        }
-    RETURN_TYPES = ("CONDITIONING","CONDITIONING",)
-    RETURN_NAMES = ("positive","negative",)
-    FUNCTION = "CLIPEncode"
-    CATEGORY = "ZSQ"
-    
-    def CLIPEncode(self, clip, positive, negative):
-        positive_tokens = clip.tokenize(positive)
-        negative_tokens = clip.tokenize(negative)
-        positive_output = clip.encode_from_tokens(positive_tokens, return_pooled=True, return_dict=True)
-        negative_output = clip.encode_from_tokens(negative_tokens, return_pooled=True, return_dict=True)
-        positive_cond = positive_output.pop("cond")
-        negative_cond = negative_output.pop("cond")
-        return ([[positive_cond, positive_output]], [[negative_cond,negative_output]], )
-    
-class PromptSelector:
-    def __init__(self):
-        pass
-    @classmethod
-    def INPUT_TYPES(s):
-        styles = ["fooocus_styles"]
-        styles_dir = FOOOCUS_STYLES_DIR
-        for file_name in os.listdir(styles_dir):
-            file = os.path.join(styles_dir, file_name)
-            if os.path.isfile(file) and file_name.endswith(".json"):
-                styles.append(file_name.split(".")[0])
-        return {
-            "required": {
-               "styles": (styles, {"default": "fooocus_styles"}),
-            },
-            "optional": {
-                "positive": ("STRING", {"forceInput": True}),
-                "negative": ("STRING", {"forceInput": True}),
-            },
-            "hidden": {"prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO", "my_unique_id": "UNIQUE_ID"},
-        }
-
-    RETURN_TYPES = ("STRING", "STRING",)
-    RETURN_NAMES = ("positive", "negative",)
-
-    CATEGORY = 'ZSQ'
-    FUNCTION = 'run'
-
-    def run(self, styles, positive='', negative='', prompt=None, extra_pnginfo=None, my_unique_id=None):
-        values = []
-        all_styles = {}
-        positive_prompt, negative_prompt = '', negative
-        if styles == "fooocus_styles":
-            file = os.path.join(RESOURCES_DIR,  styles + '.json')
-        else:
-            file = os.path.join(FOOOCUS_STYLES_DIR, styles + '.json')
-        data = read_json_file(file)
-        print(data)
-        for d in data:
-            all_styles[d['name']] = d
-        if my_unique_id in prompt:
-            if prompt[my_unique_id]["inputs"]['select_styles']:
-                values = prompt[my_unique_id]["inputs"]['select_styles'].split(',')
-
-        has_prompt = False
-        if len(values) == 0:
-            return (positive, negative)
-
-        for index, val in enumerate(values):
-            if 'prompt' in all_styles[val]:
-                if "{prompt}" in all_styles[val]['prompt'] and has_prompt == False:
-                    positive_prompt = all_styles[val]['prompt'].replace('{prompt}', positive)
-                    has_prompt = True
-                else:
-                    positive_prompt += ', ' + all_styles[val]['prompt'].replace(', {prompt}', '').replace('{prompt}', '')
-            if 'negative_prompt' in all_styles[val]:
-                negative_prompt += ', ' + all_styles[val]['negative_prompt'] if negative_prompt else all_styles[val]['negative_prompt']
-
-        if has_prompt == False and positive:
-            positive_prompt = positive + ', '
-
-        return (positive_prompt, negative_prompt)
-
-NODE_CLASS_MAPPINGS = {
-    "PromptStyler": PromptStyler,
-    "PromptLatent": PromptLatent,
-    "PromptCLIPEncode":PromptCLIPEncode,
-    "PromptSelector": PromptSelector
-}
-
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "PromptStyler": "PromptStyler",
-    "PromptLatent": "PromptLatent",
-    "PromptCLIPEncode":"PromptCLIPEncode",
-    "PromptSelector": "PromptSelector"
-}
