@@ -1,9 +1,71 @@
-import torch
 import json
 import os
 import random as rd
-import comfy.model_management
-from .config import SCRIPT_DIR,PROMPT_STYLES_DIR,FOOOCUS_STYLES_DIR,RESOURCES_DIR
+from aiohttp import web
+from server import PromptServer
+from .config import SCRIPT_DIR,PROMPT_STYLES_DIR,FOOOCUS_STYLES_DIR
+
+#get style list
+@PromptServer.instance.routes.get("/prompt/styles")
+async def getStylesList(request):
+    if "name" in request.rel_url.query:
+        name = request.rel_url.query["name"]
+        if name == 'fooocus_styles':
+            file = os.path.join(FOOOCUS_STYLES_DIR, name+'.json')
+            cn_file = os.path.join(FOOOCUS_STYLES_DIR, name + '_cn.json')
+        else:
+            file = os.path.join(FOOOCUS_STYLES_DIR, name+'.json')
+            cn_file = os.path.join(FOOOCUS_STYLES_DIR, name + '_cn.json')
+        cn_data = None
+        if os.path.isfile(cn_file):
+            f = open(cn_file, 'r', encoding='utf-8')
+            cn_data = json.load(f)
+            f.close()
+        if os.path.isfile(file):
+            f = open(file, 'r', encoding='utf-8')
+            data = json.load(f)
+            f.close()
+            if data:
+                ndata = []
+                for d in data:
+                    nd = {}
+                    name = d['name'].replace('-', ' ')
+                    words = name.split(' ')
+                    key = ' '.join(
+                        word.upper() if word.lower() in ['mre', 'sai', '3d'] else word.capitalize() for word in
+                        words)
+                    img_name = '_'.join(words).lower()
+                    if "name_cn" in d:
+                        nd['name_cn'] = d['name_cn']
+                    elif cn_data:
+                        nd['name_cn'] = cn_data[key] if key in cn_data else key
+                    nd["name"] = d['name']
+                    nd['imgName'] = img_name
+                    if "prompt" in d:
+                        nd['prompt'] = d['prompt']
+                    if "negative_prompt" in d:
+                        nd['negative_prompt'] = d['negative_prompt']
+                    ndata.append(nd)
+                return web.json_response(ndata)
+    return web.Response(status=400)
+
+# get style preview image
+@PromptServer.instance.routes.get("/prompt/styles/image")
+async def getStylesImage(request):
+    styles_name = request.rel_url.query["styles_name"] if "styles_name" in request.rel_url.query else None
+    if "name" in request.rel_url.query:
+        name = request.rel_url.query["name"]
+        if os.path.exists(os.path.join(FOOOCUS_STYLES_DIR, 'samples')):
+            file = os.path.join(FOOOCUS_STYLES_DIR, 'samples', name + '.jpg')
+            file1 = os.path.join(FOOOCUS_STYLES_DIR, 'samples', name + '.png')
+            if os.path.isfile(file) or os.path.isfile(file1):
+                file = file1 if os.path.isfile(file1) else file
+                return web.FileResponse(file)
+            elif styles_name == 'fooocus_styles':
+                return web.Response(status=400)
+        elif styles_name == 'fooocus_styles':
+            return web.Response(status=400)
+    return web.Response(status=400)
 
 def read_json_file(file_path):
     with open(file_path,'r',encoding='utf-8') as f:
@@ -132,7 +194,7 @@ def get_propmt_style(self,required,Random,Random_Flag):
     options = self.json_data
     res1 = ""
     if gender!= "-":
-            res1= res1 + f",{gender},({str(age)}-year-old):1.5"
+            res1= res1 + f",A {gender},({str(age)}-year-old):1.5"
     if not Random_Flag:
         for key in list_keys:
             tmp = get_prompt(key,required,options,config)
@@ -235,8 +297,164 @@ class PortraitStyler:
                 
         return(prompts,negative)
 
+# 风格提示词选择器
+# easy use：stylesPromptSelector
+class stylesPromptSelector:
 
+    @classmethod
+    def INPUT_TYPES(s):
+        #styles = ["fooocus_styles"]
+        styles = []
+        styles_dir = FOOOCUS_STYLES_DIR
+        for file_name in os.listdir(styles_dir):
+            file = os.path.join(styles_dir, file_name)
+            if os.path.isfile(file) and file_name.endswith(".json"):
+                styles.append(file_name.split(".")[0])
+        return {
+            "required": {
+               "styles": (styles, {"default": "fooocus_styles"}),
+            },
+            "optional": {
+                "positive": ("STRING", {"forceInput": True}),
+                "negative": ("STRING", {"forceInput": True}),
+            },
+            "hidden": {"prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO", "my_unique_id": "UNIQUE_ID"},
+        }
+
+    RETURN_TYPES = ("STRING", "STRING",)
+    RETURN_NAMES = ("positive", "negative",)
+
+    CATEGORY = 'ZSQ/Prompt'
+    FUNCTION = 'run'
+
+    def run(self, styles, positive='', negative='', prompt=None, extra_pnginfo=None, my_unique_id=None):
+        values = []
+        all_styles = {}
+        positive_prompt, negative_prompt = '', negative
+        file = os.path.join(FOOOCUS_STYLES_DIR, styles + '.json')
+        f = open(file, 'r', encoding='utf-8')
+        data = json.load(f)
+        f.close()
+        for d in data:
+            all_styles[d['name']] = d
+        if my_unique_id in prompt:
+            if prompt[my_unique_id]["inputs"]['select_styles']:
+                values = prompt[my_unique_id]["inputs"]['select_styles'].split(',')
+
+        has_prompt = False
+        if len(values) == 0:
+            return (positive, negative)
+
+        for index, val in enumerate(values):
+            if 'prompt' in all_styles[val]:
+                if "{prompt}" in all_styles[val]['prompt'] and has_prompt == False:
+                    positive_prompt = all_styles[val]['prompt'].replace('{prompt}', positive)
+                    has_prompt = True
+                else:
+                    positive_prompt += ', ' + all_styles[val]['prompt'].replace(', {prompt}', '').replace('{prompt}', '')
+            if 'negative_prompt' in all_styles[val]:
+                negative_prompt += ', ' + all_styles[val]['negative_prompt'] if negative_prompt else all_styles[val]['negative_prompt']
+
+        if has_prompt == False and positive:
+            positive_prompt = positive + ', '
+
+        return (positive_prompt, negative_prompt)
 
     
+class BatchPromptSelector:
+    @classmethod
+    def INPUT_TYPES(s):
+        #styles = ["fooocus_styles"]
+        styles = []
+        styles_dir = FOOOCUS_STYLES_DIR
+        for file_name in os.listdir(styles_dir):
+            file = os.path.join(styles_dir, file_name)
+            if os.path.isfile(file) and file_name.endswith(".json"):
+                styles.append(file_name.split(".")[0])
+        return {
+            "required": {
+               "positive": ("STRING", {"default":""}),
+               "styles": (styles, {"default": "fooocus_styles"}),
+               "batch_start": ("INT", {"default": 0}),
+               "batch_length": ("INT", {"default": 100}),
+            },
+        }
+
+    RETURN_TYPES = ("STRING","STRING", "STRING",)
+    RETURN_NAMES = ("name", "positive", "negative",)
+    OUTPUT_IS_LIST = (True,True,True)
+    CATEGORY = 'ZSQ/Prompt'
+    FUNCTION = 'run'
+
+    def run(self, styles, positive='', batch_start=0, batch_length=100):
+        values = []
+        prompt_positive=[]
+        prompt_negative=[]
+        prompt_name = []
+        file = os.path.join(FOOOCUS_STYLES_DIR, styles + '.json')
+        f = open(file, 'r', encoding='utf-8')
+        data = json.load(f)
+        f.close()
+        for d in data:
+            values.append(d)
+        max_lenth = len(values) 
+        batch_end= min(max_lenth,batch_start + batch_length)
+        for i in range(batch_start, batch_end):
+            name_tmp = values[i]["name"]
+            name_tmp = name_tmp.replace(' ', '_')
+            name_tmp = name_tmp.replace('-', '_')
+            prompt_name.append(name_tmp)
+            if 'prompt' in values[i]["prompt"]:
+                prompt_positive.append(values[i]["prompt"].replace("{prompt}", f"{positive},"))
+            else:
+                prompt_positive.append(values[i]["prompt"] + ',')
+            prompt_negative.append(values[i]["negative_prompt"])
 
 
+
+        return (prompt_name,prompt_positive, prompt_negative)
+    
+class BatchPromptJson:
+    @classmethod
+    def INPUT_TYPES(s):
+        #styles = ["fooocus_styles"]
+        styles = []
+        styles_dir = PROMPT_STYLES_DIR
+        for file_name in os.listdir(styles_dir):
+            file = os.path.join(styles_dir, file_name)
+            if os.path.isfile(file) and file_name.endswith(".json"):
+                styles.append(file_name.split(".")[0])
+        return {
+            "required": {
+               "positive": ("STRING", {"default":""}),
+               "styles": (styles, {"default": "fooocus_styles"}),
+               "batch_start": ("INT", {"default": 0}),
+               "batch_length": ("INT", {"default": 100}),
+            },
+        }
+
+    RETURN_TYPES = ("STRING","STRING",)
+    RETURN_NAMES = ("name", "positive",)
+    OUTPUT_IS_LIST = (True,True,)
+    CATEGORY = 'ZSQ/Prompt'
+    FUNCTION = 'run'
+
+    def run(self, styles, positive='', batch_start=0, batch_length=100):
+        values = []
+        prompt_positive=[]
+        prompt_name = []
+        file = os.path.join(PROMPT_STYLES_DIR, styles + '.json')
+        f = open(file, 'r', encoding='utf-8')
+        data = json.load(f)
+        f.close()
+        values = list(data.items())
+        max_lenth = len(values) 
+        batch_end= min(max_lenth,batch_start + batch_length)
+        for i in range(batch_start, batch_end):
+            name, value = values[i]
+            name = name.replace(' ', '_')
+            name = name.replace('-', '_')
+            prompt_name.append(name)
+            prompt_positive.append(f"{positive},{value}")
+
+        return (prompt_name,prompt_positive,)
