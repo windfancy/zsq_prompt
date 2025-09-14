@@ -144,11 +144,7 @@ NODE_CLASS_MAPPINGS = {
     "ImageColorAdapter":ImageColorAdapter,
     "ReActorSaveFaceModel": SaveFaceModel,
     "ReActorBuildFaceModel": BuildFaceModel,
-    "ReActorMakeFaceModelBatch": MakeFaceModelBatch,
-    "LayerMask: SegformerB2ClothesUltra": Segformer_B2_Clothes,
-    "LayerMask: SegformerUltraV2": SegformerUltraV2,
-    "LayerMask: SegformerClothesPipelineLoader": SegformerClothesPipelineLoader,
-    "LayerMask: SegformerFashionPipelineLoader": SegformerFashionPipelineLoader
+    "ReActorMakeFaceModelBatch": MakeFaceModelBatch
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -216,14 +212,11 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "ImageColorAdapter": "Image Color Adapter",
     "ReActorSaveFaceModel": "Save Face Model ZSQ/ReActor",
     "ReActorBuildFaceModel": "Build Blended Face Model ZSQ/ReActor",
-    "ReActorMakeFaceModelBatch": "Make Face Model Batch ZSQ/ReActor",
-    "LayerMask: SegformerB2ClothesUltra": "LayerMask: Segformer B2 Clothes Ultra",
-    "LayerMask: SegformerUltraV2": "LayerMask: Segformer Ultra V2",
-    "LayerMask: SegformerClothesPipelineLoader": "LayerMask: Segformer Clothes Pipeline",
-    "LayerMask: SegformerFashionPipelineLoader": "LayerMask: Segformer Fashion Pipeline"
+    "ReActorMakeFaceModelBatch": "Make Face Model Batch ZSQ/ReActor"
     }
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]
+
 
 
 
