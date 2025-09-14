@@ -12,7 +12,7 @@ MODELS_DIR = folder_paths.models_dir
 REACTOR_MODELS_PATH = os.path.join(MODELS_DIR, "reactor")
 FACE_MODELS_PATH = os.path.join(REACTOR_MODELS_PATH, "faces")
 #人像年龄
-AGE_START = 12
+AGE_START = 18
 AGE_END = 80
 
 #提示词 number
@@ -78,4 +78,5 @@ def load_model_from_hug(model):
                         local_dir=model_path,
                         local_dir_use_symlinks=False)
     return model_path
+
 
