@@ -1,6 +1,16 @@
 transformers>=4.46.3
+opencv-python>=4.7.0.72
+opencv-contrib-python
 scikit-image
 numpy
 pillow
 timm
-
+codeformer
+transparent-background
+pymatting
+segment_anything
+mediapipe
+insightface==0.7.3
+onnx>=1.14.0
+ultralytics
+numpy

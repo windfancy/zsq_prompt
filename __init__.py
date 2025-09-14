@@ -1,22 +1,38 @@
-from .zsq_prompt import (
+from .nodes.zsq_prompt import (
     PortraitStyler, 
     stylesPromptSelector,
     BatchPromptSelector,
     BatchPromptJson
     )
-from .zsq_llm import LLMText,LLMImage
-from .zsq_loader import (
+from .nodes.person_mask_ultra_v2 import PersonMaskUltraV2
+from .nodes.zsq_llm import LLMText,LLMImage
+from .nodes.zsq_face import (
+    FaceRestoreCFWithModel,
+    zsq_rmbg,face_reactor,
+    face_reactor_plus,
+    SaveFaceModel,
+    BuildFaceModel,
+    MakeFaceModelBatch
+    )
+from .nodes.zsq_loader import (
     checkpoint_sampler,
+    checkpoint_sampler_tripleclip,
+    checkpoint_sampler_dualclip,
+    checkpoint_sampler_unet,
     zsqcheckpoint,
     zsqcontrolnetStack,
     zsqcontrolnetstack_2,
-    zsqcontrolnet,zsqloraStack,
-    zsqloraStack_2,zsqsampler
+    zsqcontrolnet,
+    zsqloraStack,
+    zsqloraStack_2,
+    zsqsampler
     )   
-from .zsq_utils import (
+from .nodes.zsq_utils import (
     ZSQ_PixelLatent,
     ZSQ_RatioLatent,
     DoubleCLIPEncode,
+    ZsqLatent,
+    MaskToImage,
     ShowText,
     ShowINT,
     FloatMathOperation,
@@ -26,7 +42,7 @@ from .zsq_utils import (
     StringInput,
     IndexString
     )
-from .zsq_image import (
+from .nodes.zsq_image import (
     imageCount,
     SaveJpgImage,
     imageCrop,
@@ -47,11 +63,12 @@ from .zsq_image import (
     imageRotate,
     imageFlip,
     imageFilter,
-    imageHug,
     imageRGB,
-    ImageEmpty
+    ImageEmpty,
+    LoadImagesFromFolder,
+    ImageColorAdapter
     )
-
+from .nodes.segformer_ultra import Segformer_B2_Clothes,SegformerUltraV2,SegformerClothesPipelineLoader,SegformerFashionPipelineLoader
 
 
 directory = ".\web"
@@ -65,10 +82,18 @@ NODE_CLASS_MAPPINGS = {
     "stylesSelector": stylesPromptSelector,
     "BatchPromptSelector": BatchPromptSelector,
     "BatchPromptJson": BatchPromptJson,
+    #—————————————————————— PersonMaskUltraV2 ——————————————————————
+    "PersonMaskUltraV2":PersonMaskUltraV2,
     #—————————————————————— zsq_llm ——————————————————————
     "LLMText": LLMText,
     "LLMImage": LLMImage,
+    "FaceRestoreCFWithModel": FaceRestoreCFWithModel,
+    "zsq_rmbg": zsq_rmbg,
+    "face_reactor": face_reactor,
+    "face_reactor_plus": face_reactor_plus,
     #—————————————————————— zsq_utils ————————————————————
+    "ZsqLatent": ZsqLatent,
+    "MaskToImage": MaskToImage,    
     "ZSQPixelLatent": ZSQ_PixelLatent,
     "ZSQRatioLatent": ZSQ_RatioLatent,
     "DoubleCLIPEncode":DoubleCLIPEncode,
@@ -89,6 +114,9 @@ NODE_CLASS_MAPPINGS = {
     "loraStack_2": zsqloraStack_2,
     "zsqsampler": zsqsampler,
     "checkpoint_sampler": checkpoint_sampler,
+    "checkpoint_sampler_tripleclip": checkpoint_sampler_tripleclip,
+    "checkpoint_sampler_dualclip": checkpoint_sampler_dualclip,
+    "checkpoint_sampler_unet":checkpoint_sampler_unet,
     #—————————————————————— zsq_image ————————————————————    
     "imageCount": imageCount,
     "imageResize": imageResize,
@@ -110,10 +138,17 @@ NODE_CLASS_MAPPINGS = {
     "imageRotate": imageRotate,
     "imageFlip": imageFlip,
     "imageFilter": imageFilter,
-    "imageHug":imageHug,
     "imageRGB":imageRGB,
-    "ImageEmpty":ImageEmpty
-        
+    "ImageEmpty":ImageEmpty,
+    "LoadImagesFromFolder":LoadImagesFromFolder,
+    "ImageColorAdapter":ImageColorAdapter,
+    "ReActorSaveFaceModel": SaveFaceModel,
+    "ReActorBuildFaceModel": BuildFaceModel,
+    "ReActorMakeFaceModelBatch": MakeFaceModelBatch,
+    "LayerMask: SegformerB2ClothesUltra": Segformer_B2_Clothes,
+    "LayerMask: SegformerUltraV2": SegformerUltraV2,
+    "LayerMask: SegformerClothesPipelineLoader": SegformerClothesPipelineLoader,
+    "LayerMask: SegformerFashionPipelineLoader": SegformerFashionPipelineLoader
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -122,10 +157,18 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "BatchPromptSelector": "Batch Prompt Selector",
     "stylesSelector": "Styles Selector",
     "BatchPromptJson": "Batch Prompt Json",
+    #—————————————————————— PersonMaskUltraV2 ——————————————————————
+    "PersonMaskUltraV2": "Person Mask Ultra V2",
     #—————————————————————— zsq_llm ——————————————————————
     "LLMText": "LLM Text",
     "LLMImage": "LLM Image",
+    "FaceRestoreCFWithModel": "Face Restore",
+    "zsq_rmbg": "Remove Background",
+    "face_reactor": "Face Reactor",
+    "face_reactor_plus": "Reactor Plus",
     #—————————————————————— zsq_utils ————————————————————
+    "ZsqLatent": "Zsq Latent",
+    "MaskToImage": "Mask To Image",    
     "ZSQPixelLatent": "Pixel Latent",
     "ZSQRatioLatent": "Ratio Latent",
     "DoubleCLIPEncode":"Double CLIP Encode",
@@ -146,6 +189,9 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "loraStack_2": "Simple Lora Stack",
     "zsqsampler": "Simple Sampler",
     "checkpoint_sampler": "Checkpoint & Sampler",
+    "checkpoint_sampler_tripleclip": "Checkpoint & Sampler for TripleCLIP",
+    "checkpoint_sampler_dualclip": "Checkpoint & Sampler for DualCLIP",
+    "checkpoint_sampler_unet": "Checkpoint & Sampler for UNet",
     #—————————————————————— zsq_image ————————————————————
     "imageCount": "Image Count",
     "imageCrop": "Image Crop",
@@ -164,10 +210,19 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "imageRotate": "Image Rotate",
     "imageFlip": "Image Flip",
     "imageFilter": "Image Filter",
-    "imageHug": "Image Hug",
     "imageRGB": "Image RGB",
-    "ImageEmpty": "Image Empty"
+    "ImageEmpty": "Image Empty",
+    "LoadImagesFromFolder": "Load Images From Folder",
+    "ImageColorAdapter": "Image Color Adapter",
+    "ReActorSaveFaceModel": "Save Face Model ZSQ/ReActor",
+    "ReActorBuildFaceModel": "Build Blended Face Model ZSQ/ReActor",
+    "ReActorMakeFaceModelBatch": "Make Face Model Batch ZSQ/ReActor",
+    "LayerMask: SegformerB2ClothesUltra": "LayerMask: Segformer B2 Clothes Ultra",
+    "LayerMask: SegformerUltraV2": "LayerMask: Segformer Ultra V2",
+    "LayerMask: SegformerClothesPipelineLoader": "LayerMask: Segformer Clothes Pipeline",
+    "LayerMask: SegformerFashionPipelineLoader": "LayerMask: Segformer Fashion Pipeline"
     }
+
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]
 
 
