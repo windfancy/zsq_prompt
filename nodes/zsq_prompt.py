@@ -354,7 +354,7 @@ class PortraitStyler:
         return(prompts,negative)
 
 # 风格提示词选择器
-# easy use：stylesPromptSelector
+""" # easy use：stylesPromptSelector
 class stylesPromptSelector:
 
     @classmethod
@@ -451,7 +451,7 @@ class BatchPromptSelector:
         prompt_name,prompt_positive, prompt_negative = get_prompt_from_fooocus(values=values, positive=positive, batch_start=batch_start, batch_length=batch_length)
 
         return (prompt_name,prompt_positive, prompt_negative)
-
+ """
 class BatchPromptJson:
     @classmethod
     def INPUT_TYPES(s):
