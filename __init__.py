@@ -1,7 +1,7 @@
 from .nodes.zsq_prompt import (
     PortraitStyler, 
-    stylesPromptSelector,
-    BatchPromptSelector,
+    #stylesPromptSelector,
+    #BatchPromptSelector,
     BatchPromptJson
     )
 
@@ -68,8 +68,8 @@ WEB_DIRECTORY = directory
 NODE_CLASS_MAPPINGS = {
     #—————————————————————— zsq_prompt ———————————————————
     "PortraitStyler": PortraitStyler,
-    "stylesSelector": stylesPromptSelector,
-    "BatchPromptSelector": BatchPromptSelector,
+    #"stylesSelector": stylesPromptSelector,
+    #"BatchPromptSelector": BatchPromptSelector,
     "BatchPromptJson": BatchPromptJson,
     #—————————————————————— zsq_utils ————————————————————
     "ZsqLatent": ZsqLatent,
@@ -127,8 +127,8 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     #—————————————————————— zsq_prompt ———————————————————
     "PortraitStyler": "Portrait Styler",
-    "BatchPromptSelector": "Batch Prompt Selector",
-    "stylesSelector": "Styles Selector",
+    #"BatchPromptSelector": "Batch Prompt Selector",
+    #"stylesSelector": "Styles Selector",
     "BatchPromptJson": "Batch Prompt Json",
     #—————————————————————— zsq_utils ————————————————————
     "ZsqLatent": "Zsq Latent",
