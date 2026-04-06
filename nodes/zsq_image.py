@@ -1,4 +1,5 @@
 import torch, os,re,random
+import datetime
 import torch.nn.functional as F
 from torchvision.transforms import GaussianBlur
 import numpy as np
@@ -44,18 +45,30 @@ class SaveJpgImage:
     FUNCTION = "save_images"
 
     OUTPUT_NODE = True
-
+    
     CATEGORY = "ZSQ/Image"
+    
     DESCRIPTION = "Saves the input images to your ComfyUI output directory."
 
     def save_images(self, images, filename_prefix="ComfyUI"):
         filename_prefix += self.prefix_append
         full_output_folder, filename, counter, subfolder, filename_prefix = folder_paths.get_save_image_path(filename_prefix, self.output_dir, images[0].shape[1], images[0].shape[0])
+        # 获取当前日期并格式化为 YYYY_MM_DD
+        #current_date = datetime.datetime.now().strftime("%Y_%m_%d")
+        # 拼接成目标字符串
+        #full_output_folder = os.path.join(full_output_folder,current_date)
+        # exist_ok=True 表示如果目录已存在，不会报错
+        #os.makedirs(full_output_folder, exist_ok=True)
+        #print(f"full_output_folder:{full_output_folder}")
+        #print(f"subfolder:{subfolder}")
+        #subfolder = os.path.join(subfolder,current_date)
+
         results = list()
         for (batch_number, image) in enumerate(images):
             i = 255. * image.cpu().numpy()
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))  
             filename_with_batch_num = filename.replace("%batch_num%", str(batch_number))
+            #file = f"{current_date}_{filename_with_batch_num}_{counter:05}_.jpg"
             file = f"{filename_with_batch_num}_{counter:05}_.jpg"
             img.save(os.path.join(full_output_folder, file), 'JPEG', quality=self.quality)
             results.append({
