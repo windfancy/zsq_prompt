@@ -4,16 +4,7 @@ from .nodes.zsq_prompt import (
     BatchPromptSelector,
     BatchPromptJson
     )
-from .nodes.person_mask_ultra_v2 import PersonMaskUltraV2
-from .nodes.zsq_llm import LLMText,LLMImage
-from .nodes.zsq_face import (
-    FaceRestoreCFWithModel,
-    zsq_rmbg,face_reactor,
-    face_reactor_plus,
-    SaveFaceModel,
-    BuildFaceModel,
-    MakeFaceModelBatch
-    )
+
 from .nodes.zsq_loader import (
     checkpoint_sampler,
     checkpoint_sampler_tripleclip,
@@ -68,8 +59,6 @@ from .nodes.zsq_image import (
     LoadImagesFromFolder,
     ImageColorAdapter
     )
-from .nodes.segformer_ultra import Segformer_B2_Clothes,SegformerUltraV2,SegformerClothesPipelineLoader,SegformerFashionPipelineLoader
-
 
 directory = ".\web"
 
@@ -82,15 +71,6 @@ NODE_CLASS_MAPPINGS = {
     "stylesSelector": stylesPromptSelector,
     "BatchPromptSelector": BatchPromptSelector,
     "BatchPromptJson": BatchPromptJson,
-    #—————————————————————— PersonMaskUltraV2 ——————————————————————
-    "PersonMaskUltraV2":PersonMaskUltraV2,
-    #—————————————————————— zsq_llm ——————————————————————
-    "LLMText": LLMText,
-    "LLMImage": LLMImage,
-    "FaceRestoreCFWithModel": FaceRestoreCFWithModel,
-    "zsq_rmbg": zsq_rmbg,
-    "face_reactor": face_reactor,
-    "face_reactor_plus": face_reactor_plus,
     #—————————————————————— zsq_utils ————————————————————
     "ZsqLatent": ZsqLatent,
     "MaskToImage": MaskToImage,    
@@ -141,10 +121,7 @@ NODE_CLASS_MAPPINGS = {
     "imageRGB":imageRGB,
     "ImageEmpty":ImageEmpty,
     "LoadImagesFromFolder":LoadImagesFromFolder,
-    "ImageColorAdapter":ImageColorAdapter,
-    "ReActorSaveFaceModel": SaveFaceModel,
-    "ReActorBuildFaceModel": BuildFaceModel,
-    "ReActorMakeFaceModelBatch": MakeFaceModelBatch
+    "ImageColorAdapter":ImageColorAdapter
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -153,15 +130,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "BatchPromptSelector": "Batch Prompt Selector",
     "stylesSelector": "Styles Selector",
     "BatchPromptJson": "Batch Prompt Json",
-    #—————————————————————— PersonMaskUltraV2 ——————————————————————
-    "PersonMaskUltraV2": "Person Mask Ultra V2",
-    #—————————————————————— zsq_llm ——————————————————————
-    "LLMText": "LLM Text",
-    "LLMImage": "LLM Image",
-    "FaceRestoreCFWithModel": "Face Restore",
-    "zsq_rmbg": "Remove Background",
-    "face_reactor": "Face Reactor",
-    "face_reactor_plus": "Reactor Plus",
     #—————————————————————— zsq_utils ————————————————————
     "ZsqLatent": "Zsq Latent",
     "MaskToImage": "Mask To Image",    
@@ -209,14 +177,10 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "imageRGB": "Image RGB",
     "ImageEmpty": "Image Empty",
     "LoadImagesFromFolder": "Load Images From Folder",
-    "ImageColorAdapter": "Image Color Adapter",
-    "ReActorSaveFaceModel": "Save Face Model ZSQ/ReActor",
-    "ReActorBuildFaceModel": "Build Blended Face Model ZSQ/ReActor",
-    "ReActorMakeFaceModelBatch": "Make Face Model Batch ZSQ/ReActor"
+    "ImageColorAdapter": "Image Color Adapter"
     }
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]
-
 
 
 
