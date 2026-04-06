@@ -11,7 +11,7 @@ import numpy as np
 from enum import Enum
 from typing import List, Union
 import cv2
-from cv2.ximgproc import guidedFilter
+#from cv2.ximgproc import guidedFilter
 from skimage import img_as_float, img_as_ubyte
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -747,7 +747,7 @@ def motion_blur(image:Image, angle:int, blur:int) -> Image:
     ret_image = cv22pil(blurred)
     return ret_image
 
-def guided_filter_alpha(image:torch.Tensor, mask:torch.Tensor, filter_radius:int) -> torch.Tensor:
+""" def guided_filter_alpha(image:torch.Tensor, mask:torch.Tensor, filter_radius:int) -> torch.Tensor:
     sigma = 0.15
     d = filter_radius + 1
     mask = pil2tensor(tensor2pil(mask).convert('RGB'))
@@ -759,7 +759,7 @@ def guided_filter_alpha(image:torch.Tensor, mask:torch.Tensor, filter_radius:int
     for index, image in enumerate(i_dup):
         alpha_work = a_dup[index]
         i_dup[index] = guidedFilter(image, alpha_work, d, s)
-    return torch.from_numpy(i_dup)
+    return torch.from_numpy(i_dup)  """
 
 class VITMatteModel:
     def __init__(self,model,processor):
