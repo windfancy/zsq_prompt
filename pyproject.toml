@@ -1,0 +1,15 @@
+[project]
+name = "zsq_prompt"
+description = "NODES: PromptStyler, PromptLatent, PromptCLIPEncode, PromptSelector"
+version = "1.0.0"
+license = {file = "LICENSE"}
+dependencies = ["transformers>=4.46.3", "scikit-image", "numpy", "pillow", "timm"]
+
+[project.urls]
+Repository = "https://github.com/windfancy/zsq_prompt"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = ""
+DisplayName = "zsq_prompt"
+Icon = ""
